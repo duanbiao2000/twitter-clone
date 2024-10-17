@@ -1,17 +1,17 @@
-import { CiImageOn } from "react-icons/ci";
-import { BsEmojiSmileFill } from "react-icons/bs";
-import { useRef, useState } from "react";
-import { IoCloseSharp } from "react-icons/io5";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "react-hot-toast";
+import { CiImageOn } from "react-icons/ci"; // 导入图片图标
+import { BsEmojiSmileFill } from "react-icons/bs"; // 导入笑脸图标
+import { useRef, useState } from "react"; // 导入React的useState和useRef钩子
+import { IoCloseSharp } from "react-icons/io5"; // 导入关闭图标
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"; // 导入react-query的useMutation、useQuery和useQueryClient钩子
+import { toast } from "react-hot-toast"; // 导入react-hot-toast的toast函数
 
 const CreatePost = () => {
-	const [text, setText] = useState("");
-	const [img, setImg] = useState(null);
-	const imgRef = useRef(null);
+	const [text, setText] = useState(""); // 创建一个名为text的状态变量，用于存储文章内容
+	const [img, setImg] = useState(null); // 创建一个名为img的状态变量，用于存储文章图片
+	const imgRef = useRef(null); // 创建一个名为imgRef的引用变量，用于存储图片文件
 
-	const { data: authUser } = useQuery({ queryKey: ["authUser"] });
-	const queryClient = useQueryClient();
+	const { data: authUser } = useQuery({ queryKey: ["authUser"] }); // 使用useQuery钩子获取当前用户信息
+	const queryClient = useQueryClient(); // 使用useQueryClient钩子获取查询客户端
 
 	const {
 		mutate: createPost,
@@ -26,6 +26,7 @@ const CreatePost = () => {
 					headers: {
 						"Content-Type": "application/json",
 					},
+					// 将text和img转换为JSON字符串
 					body: JSON.stringify({ text, img }),
 				});
 				const data = await res.json();
@@ -38,26 +39,41 @@ const CreatePost = () => {
 			}
 		},
 
+		// 当创建文章操作成功时调用的回调函数
 		onSuccess: () => {
+			// 清空文章标题和内容输入框
 			setText("");
+			// 重置文章图片为初始状态
 			setImg(null);
+			// 显示成功创建文章的提示信息
 			toast.success("Post created successfully");
+			// 触发对文章列表的重新查询，以更新文章数据
 			queryClient.invalidateQueries({ queryKey: ["posts"] });
 		},
 	});
 
+	// 提交表单
 	const handleSubmit = (e) => {
+		// 阻止表单默认提交行为
 		e.preventDefault();
+		// 调用创建帖子函数，传入文本和图片
 		createPost({ text, img });
 	};
 
+	// 处理图片改变事件
 	const handleImgChange = (e) => {
+		// 获取文件对象
 		const file = e.target.files[0];
+		// 如果文件存在
 		if (file) {
+			// 创建一个FileReader对象
 			const reader = new FileReader();
+			// 当文件读取完成时
 			reader.onload = () => {
+				// 设置图片
 				setImg(reader.result);
 			};
+			// 读取文件
 			reader.readAsDataURL(file);
 		}
 	};

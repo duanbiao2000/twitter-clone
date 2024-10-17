@@ -1,3 +1,7 @@
+/**
+ * PostSkeleton组件用于渲染一个帖子的加载骨架屏
+ * 该组件展示了帖子作者的信息骨架以及帖子内容的骨架
+ */
 const PostSkeleton = () => {
 	return (
 		<div className='flex flex-col gap-4 w-full p-4'>
@@ -12,4 +16,5 @@ const PostSkeleton = () => {
 		</div>
 	);
 };
+
 export default PostSkeleton;

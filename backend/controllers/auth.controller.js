@@ -114,18 +114,20 @@ export const login = async (req, res) => {
     }
 };
 
+
 /**
- * 处理用户登出请求
- * @param {Object} req - 请求对象
- * @param {Object} res - 响应对象，用于发送响应
+ * 处理用户登出请求的异步函数
+ * @param {Object} req - 请求对象，包含用户请求的详细信息
+ * @param {Object} res - 响应对象，用于向用户发送响应
  */
 export const logout = async (req, res) => {
     try {
-        // 清除Cookie中的JWT令牌
+        // 清除Cookie中的JWT令牌，确保用户登出后，不能再通过令牌访问受保护的资源
         res.cookie("jwt", "", { maxAge: 0 });
-        // 确认登出
+        // 登出成功，向客户端发送确认消息
         res.status(200).json({ message: "Logged out successfully" });
     } catch (error) {
+        // 错误处理：打印错误信息到控制台，并向客户端发送500错误响应
         console.log("Error in logout controller", error.message);
         res.status(500).json({ error: "Internal Server Error" });
     }
@@ -133,8 +135,11 @@ export const logout = async (req, res) => {
 
 /**
  * 获取当前用户信息
- * @param {Object} req - 请求对象，包含当前用户ID
- * @param {Object} res - 响应对象，用于发送响应
+ * 
+ * 此函数用于处理获取当前用户信息的请求它根据用户ID查找用户，
+ * 并返回用户信息（不包括密码）如果查找过程中出现错误，它将返回一个内部服务器错误
+ * @param {Object} req - 请求对象，包含用户ID
+ * @param {Object} res - 响应对象，用于返回用户信息或错误
  */
 export const getMe = async (req, res) => {
     try {
@@ -143,7 +148,9 @@ export const getMe = async (req, res) => {
         // 返回用户信息
         res.status(200).json(user);
     } catch (error) {
+        // 输出错误日志
         console.log("Error in getMe controller", error.message);
+        // 返回内部服务器错误
         res.status(500).json({ error: "Internal Server Error" });
     }
 };

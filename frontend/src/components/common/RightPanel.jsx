@@ -6,22 +6,36 @@ import useFollow from "../../hooks/useFollow";
 import RightPanelSkeleton from "../skeletons/RightPanelSkeleton";
 import LoadingSpinner from "./LoadingSpinner";
 
+/**
+ * RightPanel 组件用于展示右侧面板内容，特别是推荐用户的信息
+ * 该组件使用了 useQuery 钩子来执行异步查询，获取推荐用户的列表
+ */
 const RightPanel = () => {
+	// 使用 useQuery 钩子进行数据查询
+	// 参数包括一个查询键和一个查询函数
+	// 查询键 ["suggestedUsers"] 用于唯一标识这个查询
+	// 查询函数用于实际执行异步数据请求
 	const { data: suggestedUsers, isLoading } = useQuery({
 		queryKey: ["suggestedUsers"],
 		queryFn: async () => {
 			try {
+				// 发起网络请求获取推荐用户数据
 				const res = await fetch("/api/users/suggested");
+				// 解析响应的 JSON 数据
 				const data = await res.json();
+				// 检查 HTTP 响应状态，如果请求失败则抛出错误
 				if (!res.ok) {
 					throw new Error(data.error || "Something went wrong!");
 				}
+				// 返回成功获取到的数据
 				return data;
 			} catch (error) {
+				// 捕获并抛出错误，以便于上层组件处理
 				throw new Error(error.message);
 			}
 		},
 	});
+
 
 	const { follow, isPending } = useFollow();
 

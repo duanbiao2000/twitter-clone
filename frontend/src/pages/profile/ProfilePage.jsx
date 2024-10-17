@@ -28,6 +28,9 @@ const ProfilePage = () => {
 	const { username } = useParams();
 
 	const { follow, isPending } = useFollow();
+	// 使用useQuery钩子查询授权用户的信息
+	// 该钩子主要用于执行数据查询操作，queryKey参数用于唯一标识该查询
+	// 这里使用了解构赋值，将查询结果中的data属性赋值给authUser变量
 	const { data: authUser } = useQuery({ queryKey: ["authUser"] });
 
 	const {

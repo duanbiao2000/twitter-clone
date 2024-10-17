@@ -1,82 +1,124 @@
+// 导入React图标库中的评论图标
 import { FaRegComment } from "react-icons/fa";
+// 导入Bi图标库中的转发图标
 import { BiRepost } from "react-icons/bi";
+// 导入React图标库中的心形图标
 import { FaRegHeart } from "react-icons/fa";
+// 导入React图标库中的书签图标
 import { FaRegBookmark } from "react-icons/fa6";
+// 导入React图标库中的删除图标
 import { FaTrash } from "react-icons/fa";
+// 导入React的useState钩子，用于管理组件状态
 import { useState } from "react";
+// 导入React Router的Link组件，用于创建链接
 import { Link } from "react-router-dom";
+// 导入TanStack Query的useMutation、useQuery和useQueryClient钩子，用于数据获取和管理
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// 导入React Hot Toast库的toast组件，用于显示通知吐司
 import { toast } from "react-hot-toast";
 
 import LoadingSpinner from "./LoadingSpinner";
 import { formatPostDate } from "../../utils/date";
 
 const Post = ({ post }) => {
+	// 初始化评论状态，用于存储当前输入的评论内容
 	const [comment, setComment] = useState("");
+
+	// 使用useQuery钩子获取当前认证用户的信息，queryKey用于唯一标识这个查询
 	const { data: authUser } = useQuery({ queryKey: ["authUser"] });
+
+	// 获取queryClient实例，用于操作查询缓存
 	const queryClient = useQueryClient();
+
+	// 提取帖子的所有者信息
 	const postOwner = post.user;
+
+	// 判断当前认证用户是否点赞了帖子
 	const isLiked = post.likes.includes(authUser._id);
 
+	// 判断当前帖子是否为认证用户自己发布的
 	const isMyPost = authUser._id === post.user._id;
 
+	// 格式化帖子创建时间，以便在界面上更友好地显示日期
 	const formattedDate = formatPostDate(post.createdAt);
-
+	// 使用useMutation钩子来管理和执行删除帖子的 mutation
+	// 这个钩子提供了deletePost函数来触发删除操作，并提供isDeleting状态指示是否正在删除
 	const { mutate: deletePost, isPending: isDeleting } = useMutation({
+		// 定义mutation函数，用于实际执行删除操作
+		// 该函数是异步的，以便在等待服务器响应时不会阻塞UI
 		mutationFn: async () => {
 			try {
+				// 发起DELETE请求到服务器，以删除指定的帖子
+				// 使用post._id来标识哪个帖子将被删除
 				const res = await fetch(`/api/posts/${post._id}`, {
 					method: "DELETE",
 				});
+				// 等待服务器返回的JSON数据
 				const data = await res.json();
 
+				// 如果HTTP响应状态码表示错误（例如，非2xx），则抛出一个错误
 				if (!res.ok) {
 					throw new Error(data.error || "Something went wrong");
 				}
+				// 如果一切正常，返回服务器返回的数据
 				return data;
 			} catch (error) {
+				// 捕获并抛出错误，以便上层可以处理
 				throw new Error(error);
 			}
 		},
 		onSuccess: () => {
 			toast.success("Post deleted successfully");
+			// 无效化并重新查询帖子数据
 			queryClient.invalidateQueries({ queryKey: ["posts"] });
 		},
 	});
 
-	const { mutate: likePost, isPending: isLiking } = useMutation({
-		mutationFn: async () => {
-			try {
-				const res = await fetch(`/api/posts/like/${post._id}`, {
-					method: "POST",
-				});
-				const data = await res.json();
-				if (!res.ok) {
-					throw new Error(data.error || "Something went wrong");
-				}
-				return data;
-			} catch (error) {
-				throw new Error(error);
-			}
-		},
-		onSuccess: (updatedLikes) => {
-			// this is not the best UX, bc it will refetch all posts
-			// queryClient.invalidateQueries({ queryKey: ["posts"] });
-
-			// instead, update the cache directly for that post
-			queryClient.setQueryData(["posts"], (oldData) => {
-				return oldData.map((p) => {
-					if (p._id === post._id) {
-						return { ...p, likes: updatedLikes };
-					}
-					return p;
-				});
+// 使用useMutation钩子来管理和执行帖子点赞操作
+const { mutate: likePost, isPending: isLiking } = useMutation({
+	// 定义 mutation 函数，用于点赞操作
+	mutationFn: async () => {
+		try {
+			// 发起点赞请求
+			const res = await fetch(`/api/posts/like/${post._id}`, {
+				method: "POST",
 			});
-		},
-		onError: (error) => {
-			toast.error(error.message);
-		},
-	});
+			// 解析响应数据
+			const data = await res.json();
+			// 检查响应状态，如果请求失败则抛出错误
+			if (!res.ok) {
+				throw new Error(data.error || "Something went wrong");
+			}
+			// 返回数据，包括更新后的点赞信息
+			return data;
+		} catch (error) {
+			// 捕获并抛出错误
+			throw new Error(error);
+		}
+	},
+	// 点赞成功后的回调函数
+	onSuccess: (updatedLikes) => {
+		// 重新获取所有帖子数据，但这种方式不够优化，因为会影响到所有帖子的数据
+		// queryClient.invalidateQueries({ queryKey: ["posts"] });
+
+		// 优化方式：直接更新缓存中指定帖子的点赞信息
+		queryClient.setQueryData(["posts"], (oldData) => {
+			return oldData.map((p) => {
+				// 如果是当前操作的帖子，则更新其点赞信息
+				if (p._id === post._id) {
+					return { ...p, likes: updatedLikes };
+				}
+				// 其他帖子保持不变
+				return p;
+			});
+		});
+	},
+	// 点赞失败后的回调函数
+	onError: (error) => {
+		// 显示错误提示
+		toast.error(error.message);
+	},
+});
 
 	const { mutate: commentPost, isPending: isCommenting } = useMutation({
 		mutationFn: async () => {
@@ -236,9 +278,8 @@ const Post = ({ post }) => {
 								)}
 
 								<span
-									className={`text-sm  group-hover:text-pink-500 ${
-										isLiked ? "text-pink-500" : "text-slate-500"
-									}`}
+									className={`text-sm  group-hover:text-pink-500 ${isLiked ? "text-pink-500" : "text-slate-500"
+										}`}
 								>
 									{post.likes.length}
 								</span>

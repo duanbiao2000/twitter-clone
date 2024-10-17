@@ -9,30 +9,44 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 const Sidebar = () => {
-	const queryClient = useQueryClient();
-	const { mutate: logout } = useMutation({
-		mutationFn: async () => {
-			try {
-				const res = await fetch("/api/auth/logout", {
-					method: "POST",
-				});
-				const data = await res.json();
+	// 使用useQueryClient钩子获取queryClient实例，用于后续的查询缓存操作
+const queryClient = useQueryClient();
 
-				if (!res.ok) {
-					throw new Error(data.error || "Something went wrong");
-				}
-			} catch (error) {
-				throw new Error(error);
-			}
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["authUser"] });
-		},
-		onError: () => {
-			toast.error("Logout failed");
-		},
-	});
-	const { data: authUser } = useQuery({ queryKey: ["authUser"] });
+// 使用useMutation钩子定义一个logout操作
+const { mutate: logout } = useMutation({
+    // 定义mutation函数，用于执行登出操作
+    mutationFn: async () => {
+        try {
+            // 发起POST请求到"/api/auth/logout"端点以执行登出操作
+            const res = await fetch("/api/auth/logout", {
+                method: "POST",
+            });
+            // 等待并获取服务器响应的数据
+            const data = await res.json();
+
+            // 如果服务器响应状态码表示错误，则抛出异常
+            if (!res.ok) {
+                throw new Error(data.error || "Something went wrong");
+            }
+        } catch (error) {
+            // 捕获并抛出异常，确保任何错误都会被处理
+            throw new Error(error);
+        }
+    },
+    // 当mutation成功时，执行的回调函数
+    onSuccess: () => {
+        // 使authUser查询缓存失效，触发重新获取用户认证信息
+        queryClient.invalidateQueries({ queryKey: ["authUser"] });
+    },
+    // 当mutation失败时，执行的回调函数
+    onError: () => {
+        // 显示错误通知，告知用户登出失败
+        toast.error("Logout failed");
+    },
+});
+
+// 使用useQuery钩子获取authUser查询的数据
+const { data: authUser } = useQuery({ queryKey: ["authUser"] });
 
 	return (
 		<div className='md:flex-[2_2_0] w-18 max-w-52'>
